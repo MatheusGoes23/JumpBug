@@ -13,7 +13,7 @@
 #	Display Height: 512					     #
 #	Base Address for Display: 0x10008000 ($gp)		     #
 ######################################################################
-#	Tecla de pulo do jogador: W				     #
+#								     #
 ######################################################################
 
 	.data
@@ -36,15 +36,12 @@ LivesMsg:	.asciiz 	" vidas.\n"
 GameOverMsg:	.asciiz 	"GAME OVER!\n"
 ScoreMsg:	.asciiz		"Sua pontuação final foi: "
 
-#Informações do Jogador:
-playerHeadX: 	.word 30
-playerHeadY:	.word 39
-actualPlayerX:	.word 30
-actualPlayerY:	.word 39
+#Informações do Adversário:
+adversaryHeadX: 	.word 64
+adversaryHeadY:	.word 34
+actualAdversaryX:	.word 64
+actualAdversaryY:	.word 34
 initiateY:	.word 0
-
-#Pular:
-jump:		.word 119 #pulo
 
 	.text
 main:
@@ -83,18 +80,22 @@ FillFloor:
 # 	Inicializando Variáveis			     #
 ######################################################
 Init:
-	li $t0, 31		#Largura do jogador pela esquerda
-	sw $t0, playerHeadX
-	li $t0, 39		#Tamnho do jogador por cima
-	sw $t0, playerHeadY
+	li $t0,	64   #LARGURA PELA ESQUERDA 
+	sw $t0, adversaryHeadX
 	
-	li $t0, 31
-	sw $t0, actualPlayerX
-	li $t0, 39
-	sw $t0, actualPlayerY
-
-	li $t0, 119
-	sw $t0, jump
+	# spawn do inimigo em Y aleatório
+	li $v0, 42
+	li $a1, 15
+	syscall
+	
+	addi $a0, $a0, 34
+	sw $a0, adversaryHeadY
+	addi $t7, $t0, 1
+	
+	lw $t0, adversaryHeadX
+	sw $t0, actualAdversaryX
+	lw $t0, adversaryHeadY
+	sw $t0, actualAdversaryY
 	
 	ClearRegisters:
 
@@ -120,75 +121,68 @@ Init:
 	li $s4, 0
 
 ######################################################
-# 	Desenhando o Jogador			     #
+# 	Desenhando o Adversário			     #
 ######################################################
-	lw $t5, playerColor
-	addi $a2, $0, 0		 #Tamnho do jogador por baixo
-	addi $a3, $0, 48	 #Limite do tamanho por baixo
-	jal DrawPlayer
+	lw $t5, adversaryColor
+	lw $a3, adversaryHeadY		#LIMITE DO TAMNHO POR CIMA
+	jal DrawAdversary
 	
 ######################################################
 # 	Verificação do input no teclado		     #
 ######################################################
 inputCheck:
+	#ADVERSARIO ANDANDO PARA A ESQUERDA
+	lw $t6, adversaryHeadX
+	addi $t8, $t6, -1
+	sw $t8, adversaryHeadX
+	addi $t9, $0, -1
+	
+	beq $t8, $t9, stop
+	
+	#TEMPO 
+	li $a0, 35 		#Tempo velocidade do adversário
+	li $v0, 32
+	syscall
+	
 	#Pegando valor digitado no teclado
 	li $t0, 0xffff0000 #salvando endereço do bit ready
 	lw $t1, ($t0) #acessando bit ready
 	andi $t1, $t1, 0x0001 #checando se o bit ready é 1 
 	
-	#Desenhando o jogador na sua posição inicial
-	lw $t5, playerColor
-	addi $a2, $0, 0		#Coordenada y do jogador
-	addi $a3, $0, 48	#Tamanho do jogador por baixo
-	jal DrawPlayer
-	
+	#Desenhando o personagem na sua posição inicial
+	lw $t5, adversaryColor
+	addi $a2, $0, -2   			#POSIÇÃO Y DO ADVERSÁRIO
+	lw $a3, adversaryHeadY
+	addi $a3, $a3, 1			#TAMANHO POR BAIXO
+	jal DrawAdversary
+	jal clearAdversary
 ######################################################
-# 	Atualizando posição do jogador		     #
+# 	Atualizando posição do adversário	     #
 ######################################################		
-DrawJump:	
-	lw $a1, 0xffff0004 #Guarda letra digitada em $a1	
-	lw $a0, jump # Carregando tecla de pulo
-	bne $a1, $a0, inputCheck
-	sw $0, 0xffff0004
+
+stop:	
+	addi $t8, $0, 0
+	addi $t8, $0, 64
+	sw $t8, adversaryHeadX
+	j main
 	
-	#Atualizar jogador pulando se a tecla digitada for igual a tecla de pulo
-	#Desenhando jogador pulando
-	lw $t5, playerColor
-	addi $a2, $0, -12	#Coordenada y do jogador durante o pulo
-	addi $a3, $0, 48	#Tamanho do jogador por baixo durante o pulo	
-	jal DrawPlayer
+clearAdversary:
+	#Desenhando o personagem na sua posição inicial
+	lw $t8, adversaryHeadX
+	addi $t8, $t8, 1
+	sw $t8, adversaryHeadX
 	
-	#Apagando jogador inicial, antes de pular
 	lw $t5, backgroundColor
-	addi $a2, $0, 0
-	addi $a3, $0, 48
-	jal DrawPlayer
+	addi $a2, $0, -2   			#POSIÇÃO Y DO ADVERSÁRIO
+	lw $a3, adversaryHeadY
+	addi $a3, $a3, 1			#TAMANHO POR BAIXO
 	
-	li $t9, 0
-while:	beq $t9, 1, stop
-
-	li $a0, 680 #Tempo de pulo do jogador
-	li $v0, 32
-	syscall
-
-	addi $t9, $t9, 1
-	j while
-
-stop:
-	#Apagando jogador que esta pulando
-	lw $t5, backgroundColor
-	addi $a2, $0, -12
-	addi $a3, $0, 48
-	jal DrawPlayer
+	jal DrawAdversary
 	
-	#Desenhando o jogador na sua posição inicial
-	lw $t5, playerColor
-	addi $a2, $0, 0		#Coordenada y do jogador
-	addi $a3, $0, 48	#Tamanho do jogador por baixo
-	jal DrawPlayer
-
-exitDrawJump:
-	j inputCheck #Voltar para entrada do teclado
+	lw $t6, adversaryHeadX
+	addi $t8, $t6, -1
+	sw $t8, adversaryHeadX
+	j inputCheck
 
 ##################################################################
 #			FUNÇÕES					 #	
@@ -216,34 +210,38 @@ DrawPixel:
 	sw $a1, ($a0) 	#preenche a coordenada com o valor	
 	jr $ra		#retorna
 	
-############################################################################
-#	Função DrawPlayer						   #
-# 	$a2 -> Valor para somar com a coordenada Y e fazer o jogador pular #
-# 	$a3 -> Valor do formato do jogador				   #
-############################################################################
-DrawPlayer:
-	lw $t0, playerHeadX #carregando coordenada x
-	lw $t1, playerHeadY #carregando coordenada y
-FillPlayerX:
+###############################################################################
+#	Função DrawAdversary						      #
+# 	$a2 -> Valor para somar com a coordenada Y e fazer o adversário pular #
+# 	$a3 -> Valor do formato do adversário				      #
+###############################################################################
+DrawAdversary:
+	lw $t0, adversaryHeadX #carregando coordenada x
+	lw $t1, adversaryHeadY #carregando coordenada y
+	addi $t7, $t0, 1
+	
+FillAdversaryX:
+	
 	add $a0, $t0, $0 #carregando coordenada x
-	sw $a0, actualPlayerX
-	add $a1, $t1, $a2 #carregando coordenada y	
-	beq $t0, 34, Exit #comparando a largura do jogador pela direira
+	sw $a0, actualAdversaryX
+	add $a1, $t1, $a2 #carregando coordenada y
+	
+	beq $t0, $t7, Exit #comparando a largura do adversário  #34  #LARGURA PELA DIREIRA #61
 	addi $sp, $sp, -4 #salvando valor de $ra
-	sw $ra, 0($sp)
+	sw $ra, 0($sp) 
 		
-	jal FillPlayerY	#desenhar jogador
+	jal FillAdversaryY	#desenhar adversário
 	
 	lw $ra, 0($sp) #recuperando valor de $ra
 	addi $sp, $sp, 4
 	
-	addi $t0, $t0, 1
-	j FillPlayerX
+	addi $t0, $t0, 1 
+	j FillAdversaryX
 			
-FillPlayerY:	
+FillAdversaryY:	
 	add $a0, $t0, $0 #carregando coordenada x
 	add $a1, $t1, $a2 #carregando coordenada y
-	sw $a1, actualPlayerY
+	sw $a1, actualAdversaryY
 		
 	addi $sp, $sp, -4 #salvando valor de $ra
 	sw $ra, 0($sp)
@@ -254,22 +252,23 @@ FillPlayerY:
 	addi $sp, $sp, 4
 	
 	move $a0, $v0 #copiando coordenadas para $a0
-	addi $a1, $t5, 0 #carregando a cor do jogador para $a1
+	addi $a1, $t5, 0 #carregando a cor do adversário para $a1
 	
-	beq $t1, $a3, stopFill #comparando se já chegou à altura do jogador
+	beq $t1, $a3, stopFill #comparando se já chegou à altura do adversário
 
 	addi $sp, $sp, -4 #salvando valor de $ra
 	sw $ra, 0($sp)
 			
-	jal DrawPixel	#desenhar jogador
+	jal DrawPixel	#desenhar adversário
 	
 	lw $ra, 0($sp) #recuperando valor de $ra
 	addi $sp, $sp, 4
 	
 	addi $t1, $t1, 1
-	j FillPlayerY
+	
+	j FillAdversaryY
 stopFill:
-	lw $t1, playerHeadY #carregando coordenada y
+	lw $t1, adversaryHeadY #carregando coordenada y
 	jr $ra
 	
 Exit:
