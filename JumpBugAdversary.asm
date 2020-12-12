@@ -38,7 +38,7 @@ ScoreMsg:	.asciiz		"Sua pontuação final foi: "
 
 #Informações do Adversário:
 adversaryHeadX: 	.word 64
-adversaryHeadY:	.word 34
+adversaryHeadY:		.word 34
 actualAdversaryX:	.word 64
 actualAdversaryY:	.word 34
 initiateY:	.word 0
@@ -212,7 +212,7 @@ DrawPixel:
 	
 ###############################################################################
 #	Função DrawAdversary						      #
-# 	$a2 -> Valor para somar com a coordenada Y e fazer o adversário pular #
+# 	$a2 -> Valor para somar com a coordenada Y e fazer o adversário andar #
 # 	$a3 -> Valor do formato do adversário				      #
 ###############################################################################
 DrawAdversary:
