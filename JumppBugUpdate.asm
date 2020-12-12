@@ -44,7 +44,7 @@ playerHeadX: 	.word 31
 playerHeadY:	.word 39
 actualPlayerX:	.word 31
 actualPlayerY:	.word 39
-initiateY:	.word 0
+lives:		.word 3
 
 #Informações do Adversário:
 adversaryHeadX: 	.word 64
@@ -164,6 +164,20 @@ Init:
 # 	Verificação do input no teclado		     #
 ######################################################
 inputCheck:
+	#Checando se o adversário atingiu o jogador 
+	lw $t8, adversaryHeadX
+	lw $t9, playerHeadX
+	bne $t8, $t9, Continue		#Checando se o adversário nâo está na mesma coordenada x do jogador
+	lw $t8, adversaryHeadY
+	lw $t9, playerHeadY
+	addi $t0, $t9, 10		#Pé do jogador
+	addi $t9, $t9, 2
+checkHeadY:
+	beq $t9, $t0, Continue
+	beq $t8, $t9, playerDied	#Checando se o adversário está na mesma coordenada y do jogador	
+	addi $t9, $t9, 1
+	j checkHeadY
+Continue:
 	#Pegando valor digitado no teclado
 	li $t0, 0xffff0000 		#Salvando endereço do bit ready
 	lw $t1, ($t0) 			#Acessando bit ready
@@ -425,3 +439,35 @@ stopFill:
 	
 Exit:
 	jr $ra
+
+playerDied:
+	#Checando se ainda há vidas
+	lw $t0, lives
+	beq $t0, 1, gameOver
+	
+	#Removendo uma vida
+	addi $t0, $t0, -1
+	sw $t0, lives
+	
+	#Imprimindo a mensagem que foi atingido
+	li $v0, 4
+	la $a0,	DiedMsg
+	syscall
+	
+	#Imprimindo o número de vidas restantes
+	li $v0, 1
+	la $a0,	($t0)
+	syscall
+	
+	#Imprimindo a mensagem da quantidades de vidas restantes
+	li $v0, 4
+	la $a0,	LivesMsg
+	syscall
+	
+	j Continue
+	
+gameOver:
+	#Imprimindo a mensagem de game over
+	li $v0, 4
+	la $a0,	GameOverMsg
+	syscall
