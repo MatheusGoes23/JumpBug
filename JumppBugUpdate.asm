@@ -68,10 +68,21 @@ main:
 	add $a0, $gp, $zero 		#Preenchendo com laço
 	
 FillBackground:
-	beq $a0, $a2, Floor
+	beq $a0, $a2, DrawLives
 	sw $a1, 0($a0) 			#Armazenando cor
 	addiu $a0, $a0, 4 		#Incrementando contador
 	j FillBackground
+	
+DrawLives:
+	add $t0, $gp, 260
+	lw $t1, lives #Carrega o numero de vidas
+LoopLives:
+	beq $t2, $t1, Floor 
+	lw $a1, adversaryColor
+	sw $a1, 0($t0)
+	add $t0, $t0, 8
+	add $t2, $t2, 1 #Contador
+	j LoopLives
 
 Floor:
 	addi $t0, $a0, 0
