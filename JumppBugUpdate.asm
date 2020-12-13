@@ -45,6 +45,7 @@ playerHeadY:	.word 39
 actualPlayerX:	.word 31
 actualPlayerY:	.word 39
 lives:		.word 3
+score: .word 0
 
 #Informações do Adversário:
 adversaryHeadX: 	.word 64
@@ -268,6 +269,9 @@ stopAdversary:
 	addi $t8, $0, 0
 	addi $t8, $0, 64
 	sw $t8, adversaryHeadX
+	lw $s5, score #Lê a label score
+	add $s5, $s5, 1 #Adiciona mais um ao score
+	sw $s5, score #Salva o score na memória
 	j main
 	
 clearAdversary:
@@ -458,6 +462,9 @@ playerDied:
 	
 	#Removendo uma vida
 	addi $t0, $t0, -1
+	lw $s5, score #lê o score
+	add $s5, $s5, -1 #Subtrai 1 do score para não receber nenhum ponto quando o personagem for atingido
+	sw $s5, score #Armazena o valor do score
 	sw $t0, lives
 	
 	#Imprimindo a mensagem que foi atingido
@@ -481,4 +488,12 @@ gameOver:
 	#Imprimindo a mensagem de game over
 	li $v0, 4
 	la $a0,	GameOverMsg
+	syscall
+	
+	#Imprimindo a mensagem de score
+	li $v0, 4
+	la $a0, ScoreMsg
+	syscall
+	li $v0, 1
+	lw $a0, score
 	syscall
