@@ -38,6 +38,7 @@ DiedMsg:	.asciiz 	"Você foi atingido. Restam ainda: "
 LivesMsg:	.asciiz 	" vidas.\n"
 GameOverMsg:	.asciiz 	"GAME OVER!\n"
 ScoreMsg:	.asciiz		"Sua pontuação final foi: "
+RestartMsg: .asciiz "Deseja reiniciar a partida?"
 
 #Informações do Jogador:
 playerHeadX: 	.word 31
@@ -57,7 +58,16 @@ actualAdversaryY:	.word 34
 jump:		.word 119 #pulo
 
 	.text
+reset:
+	#Resetando os valores da vida e score
+	li $t0, 3
+	sw $t0, lives #Resetando a vida
+	li $t0, 0
+	sw $t0, score #Resetando o score
+
 main:
+
+
 ######################################################
 # 	Preenchendo a tela e o chão		     #
 ######################################################
@@ -491,9 +501,15 @@ gameOver:
 	syscall
 	
 	#Imprimindo a mensagem de score
-	li $v0, 4
+	li $v0, 56
 	la $a0, ScoreMsg
+	lw $a1, score
 	syscall
-	li $v0, 1
-	lw $a0, score
+	
+	#Perguntar se quer reiniciar a partida
+	li $v0, 50
+	la $a0, RestartMsg
 	syscall
+	
+	#Testa a resposta do usuario
+	beq $a0, 0, reset #Se for 0 o usuário quer reiniciar
