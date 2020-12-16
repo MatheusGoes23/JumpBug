@@ -185,6 +185,7 @@ checkHeadY:
 	addi $t9, $t9, 1
 	j checkHeadY
 Continue:
+
 	#Pegando valor digitado no teclado
 	li $t0, 0xffff0000 		#Salvando endereço do bit ready
 	lw $t1, ($t0) 			#Acessando bit ready
@@ -227,6 +228,9 @@ DrawJump:
 	bne $a1, $a0, inputCheck
 	sw $0, 0xffff0004
 	
+	li $t1, 39
+	sw $t1, playerHeadY		#Atualizando coordenada y do jogador
+	
 	#Jogador pulando
 	lw $t5, playerColor
 	addi $a2, $0, -12		#Coordenada y do jogador durante o pulo
@@ -238,7 +242,7 @@ DrawJump:
 	addi $a2, $0, 0
 	addi $a3, $0, 48
 	jal DrawPlayer
-	li $t1, 27
+	li $t1, 28
 	sw $t1, playerHeadY		#Atualizando coordenada y do jogador
 	
 	#Desenhando o adversário nas suas novas coordenadas
