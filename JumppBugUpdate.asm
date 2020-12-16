@@ -43,16 +43,12 @@ RestartMsg: .asciiz "Deseja reiniciar a partida?"
 #Informações do Jogador:
 playerHeadX: 	.word 31
 playerHeadY:	.word 39
-actualPlayerX:	.word 31
-actualPlayerY:	.word 39
 lives:		.word 3
 score: .word 0
 
 #Informações do Adversário:
 adversaryHeadX: 	.word 64
 adversaryHeadY:		.word 34
-actualAdversaryX:	.word 64
-actualAdversaryY:	.word 34
 
 #Pular:
 jump:		.word 119 #pulo
@@ -66,7 +62,6 @@ reset:
 	sw $t0, score #Resetando o score
 
 main:
-
 
 ######################################################
 # 	Preenchendo a tela e o chão		     #
@@ -119,11 +114,6 @@ Init:
 	li $t0, 39			#Tamanho do jogador por cima
 	sw $t0, playerHeadY
 	
-	li $t0, 31
-	sw $t0, actualPlayerX
-	li $t0, 39
-	sw $t0, actualPlayerY
-	
 	li $t0,	64			#Largura do adversário pela esquerda
 	sw $t0, adversaryHeadX
 	
@@ -135,11 +125,6 @@ Init:
 	addi $a0, $a0, 34
 	sw $a0, adversaryHeadY
 	addi $t7, $t0, 1
-	
-	lw $t0, adversaryHeadX
-	sw $t0, actualAdversaryX
-	lw $t0, adversaryHeadY
-	sw $t0, actualAdversaryY
 
 	li $t0, 119
 	sw $t0, jump
@@ -253,6 +238,8 @@ DrawJump:
 	addi $a2, $0, 0
 	addi $a3, $0, 48
 	jal DrawPlayer
+	li $t1, 27
+	sw $t1, playerHeadY		#Atualizando coordenada y do jogador
 	
 	#Desenhando o adversário nas suas novas coordenadas
 	lw $t5, adversaryColor
@@ -359,7 +346,6 @@ DrawAdversary:
 FillAdversaryX:
 	
 	add $a0, $t0, $0 		#Carregando coordenada x do adversário
-	sw $a0, actualAdversaryX
 	add $a1, $t1, $a2 		#Carregando coordenada y do adversário
 	
 	beq $t0, $t7, Exit 		#Comparando a largura pela direita do adversário
@@ -377,7 +363,6 @@ FillAdversaryX:
 FillAdversaryY:	
 	add $a0, $t0, $0 		#Carregando coordenada x do adversário
 	add $a1, $t1, $a2 		#Carregando coordenada y do adversário
-	sw $a1, actualAdversaryY
 		
 	addi $sp, $sp, -4 		#Salvando valor de $ra
 	sw $ra, 0($sp)
@@ -414,7 +399,6 @@ DrawPlayer:
 	lw $t1, playerHeadY 		#Carregando coordenada y do jogador
 FillPlayerX:
 	add $a0, $t0, $0 		#Carregando coordenada x do jogador
-	sw $a0, actualPlayerX
 	add $a1, $t1, $a2 		#Carregando coordenada y do jogador	
 	beq $t0, 32, Exit 		#Comparando a largura do jogador pela direira
 	addi $sp, $sp, -4	 	#Salvando valor de $ra
@@ -431,7 +415,6 @@ FillPlayerX:
 FillPlayerY:	
 	add $a0, $t0, $0 		#carregando coordenada x do jogador
 	add $a1, $t1, $a2 		#carregando coordenada y do jogador
-	sw $a1, actualPlayerY
 		
 	addi $sp, $sp, -4 		#salvando valor de $ra
 	sw $ra, 0($sp)
@@ -473,7 +456,7 @@ playerDied:
 	#Removendo uma vida
 	addi $t0, $t0, -1
 	lw $s5, score #lê o score
-	add $s5, $s5, -1 #Subtrai 1 do score para não receber nenhum ponto quando o personagem for atingido
+	add $s5, $s5, -1 #Subtrai 1 do score para não receber nenhum ponto quando o jogador for atingido
 	sw $s5, score #Armazena o valor do score
 	sw $t0, lives
 	
