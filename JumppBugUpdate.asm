@@ -1,25 +1,47 @@
 ######################################################################
-# 			     JUMP BUG!                               #
+# 			      JUMP BUG                               #
 ######################################################################
-#              		 Feito por Matheus Goes                      #
+#	       Feito por Matheus Goes e Edmundo Vitor		     #
 ######################################################################
-#	Este programa requer as ferramentas Keyboard and Display     #
-#       MMIO e Bitmap Display conectadas ao MIPS.                    #
+#	Funcionamento do jogo:					     #
+#	Deve marcar essas opções no MARS:			     #
+#	Settings -> Popup dialog for input syscalls (5,6,7,8,12).    #
+#	Settings -> Initialize Program Counter to global	     #
+#	'main’ if defined.					     #
 #								     #
-#       Configurações do Bitmap Display                              #
-#	Unit Width: 8						     #
-#	Unit Height: 8						     #
-#	Display Width: 512					     #
-#	Display Height: 512					     #
-#	Base Address for Display: 0x10008000 ($gp)		     #
+#	Deve usar essas ferramentas do MARS conectadas ao MIPS:	     #
+#	Tools -> Keyboard and Display MMIO Simulator.		     #
+#	Tools -> Bitmap Display.				     #
+#								     #
+#	Explicação do jogo:					     #
+#	O jogo consiste em: Um único jogador que começa com 3 vidas, #
+#	e está sempre centralizado horizontalmente, podendo pular ou #
+#	não, sobre um adversário que aparece à direita da tela em    #
+#	uma altura aleatória, e se move constantemente para esquerda #
+#	sempre na mesma altura, até chegar ao fim da tela, logo      #
+#	depois repetindo o mesmo processo, e novamente com uma       #
+#	altura aleatória, então, se o jogador desviar do adversário  #
+#	é somado 1 ponto à pontuação total, porém, se o adversário   #
+#	atingir o jogador é subtraída uma vida e não somado o ponto, #
+#	porém se acabar as 3 vidas do jogador o jogo da game over e  #
+#	pergunta se quer jogar novamente e recomeçar todas as        #
+#	contagens.						     #
 ######################################################################
-#	Tecla de pulo do jogador: W				     #
+#       Configurações do Bitmap Display:                             #
+#	Unit Width: 8.						     #
+#	Unit Height: 8.						     #
+#	Display Width: 512.					     #
+#	Display Height: 512.					     #
+#	Base Address for Display: 0x10008000 ($gp).		     #
 ######################################################################
-	#EXPLICAÇÃO DO JOGO AINDA NÃO COMENTADA!
-	#FUNCIONANDO APENAS O ADVERSÁRIO ANDANDO DE FORMA ALEATÓRIA E
-	# O JOGADOR PULANDO!
+#	Configurações do jogo:					     #
+#	Tecla de pulo do jogador: w minúsculo.			     #
+#	Velocidade dos adversários: 6,25 pixels por segundo.	     #
+#	Cada vez em que o jogador desvia de um adversário é	     #
+#	somado 1 ponto na sua pontuação total.			     #
+######################################################################
 
-	.data
+.data
 
 #Informações no núcleo do jogo:
 
@@ -33,36 +55,36 @@ backgroundColor:.word	0xA6BFFF	# sky blue
 floorColor:     .word	0xB85800	# brown	
 adversaryColor: .word	0xFF0000	# red
 
-#Mensagens:  #ainda não implementadas
-DiedMsg:	.asciiz 	"Você foi atingido. Restam ainda: "
-LivesMsg:	.asciiz 	" vidas.\n"
-GameOverMsg:	.asciiz 	"GAME OVER!\n"
-ScoreMsg:	.asciiz		"Sua pontuação final foi: "
-RestartMsg: .asciiz "Deseja reiniciar a partida?"
+#Mensagens:
+DiedMsg:	.asciiz "Você foi atingido. Restam ainda: "
+LivesMsg:	.asciiz " vidas.\n"
+GameOverMsg:	.asciiz "GAME OVER!\n"
+ScoreMsg:	.asciiz	"Sua pontuação final foi: "
+RestartMsg: 	.asciiz "Deseja reiniciar a partida?"
 
 #Informações do Jogador:
 playerHeadX: 	.word 31
 playerHeadY:	.word 39
 lives:		.word 3
-score: .word 0
+score: 		.word 0
 
 #Informações do Adversário:
-adversaryHeadX: 	.word 64
-adversaryHeadY:		.word 34
+adversaryHeadX: .word 64
+adversaryHeadY:	.word 34
 
 #Pular:
-jump:		.word 119 #pulo
+jump:		.word 119 		#Valor da tecla de pulo
 
-	.text
+.text
+
 reset:
 	#Resetando os valores da vida e score
 	li $t0, 3
-	sw $t0, lives #Resetando a vida
+	sw $t0, lives 			#Resetando a vida
 	li $t0, 0
-	sw $t0, score #Resetando o score
+	sw $t0, score 			#Resetando o score
 
 main:
-
 ######################################################
 # 	Preenchendo a tela e o chão		     #
 ######################################################
@@ -81,13 +103,13 @@ FillBackground:
 	
 DrawLives:
 	add $t0, $gp, 260
-	lw $t1, lives #Carrega o numero de vidas
+	lw $t1, lives 			#Carrega o número de vidas
 LoopLives:
 	beq $t2, $t1, Floor 
 	lw $a1, adversaryColor
 	sw $a1, 0($t0)
 	add $t0, $t0, 8
-	add $t2, $t2, 1 #Contador
+	add $t2, $t2, 1 		#Contador
 	j LoopLives
 
 Floor:
@@ -122,13 +144,13 @@ Init:
 	li $a1, 15
 	syscall
 	
-	addi $a0, $a0, 34
-	sw $a0, adversaryHeadY
-	addi $t7, $t0, 1
+	addi $a0, $a0, 34		#Atualizando altura do adversário
+	sw $a0, adversaryHeadY		
 
-	li $t0, 119
-	sw $t0, jump
+	li $t0, 119			#Valor da tecla de pulo
+	sw $t0, jump			
 	
+	#Limpando os registradores
 	ClearRegisters:
 
 	li $v0, 0
@@ -199,7 +221,7 @@ Continue:
 	beq $t8, $t9, stopAdversary
 	
 	#Velocidade do jogo
-	li $a0, 17 			#Tempo velocidade do adversário e do tempo de pulo do jogador
+	li $a0, 16 			#Tempo velocidade do adversário e do tempo de pulo do jogador
 	li $v0, 32
 	syscall
 	
@@ -210,7 +232,7 @@ Continue:
 	
 	#Desenhando o adversário na sua nova posição
 	lw $t5, adversaryColor
-	addi $a2, $0, -2   		#Coordenadas Y do adversário
+	addi $a2, $0, -2   		#Coordenadas y do adversário
 	lw $a3, adversaryHeadY
 	addi $a3, $a3, 1		#Tamanho do adversário por baixo
 	jal DrawAdversary
@@ -270,9 +292,9 @@ stopAdversary:
 	addi $t8, $0, 0
 	addi $t8, $0, 64
 	sw $t8, adversaryHeadX
-	lw $s5, score #Lê a label score
-	add $s5, $s5, 1 #Adiciona mais um ao score
-	sw $s5, score #Salva o score na memória
+	lw $s5, score 			#Lê a label score
+	add $s5, $s5, 1 		#Adiciona mais um ao score
+	sw $s5, score 			#Salva o score na memória
 	j main
 	
 clearAdversary:
@@ -309,7 +331,7 @@ stop:
 	jal DrawPlayer
 
 exitDrawJump:
-	j inputCheck #Voltar para entrada do teclado
+	j inputCheck 			#Voltar para entrada do teclado
 
 ##################################################################
 #			FUNÇÕES					 #	
@@ -339,13 +361,13 @@ DrawPixel:
 	
 ###############################################################################
 #	Função DrawAdversary						      #
-# 	$a2 -> Valor para somar com a coordenada Y e fazer o adversário andar #
+# 	$a2 -> Valor para somar com a coordenada y e fazer o adversário andar #
 # 	$a3 -> Valor do formato do adversário				      #
 ###############################################################################
 DrawAdversary:
 	lw $t0, adversaryHeadX 		#Carregando coordenada x do adversário
 	lw $t1, adversaryHeadY 		#Carregando coordenada y do adversário
-	addi $t7, $t0, 1
+	addi $t7, $t0, 1		#Largura do adversário pela direita
 	
 FillAdversaryX:
 	
@@ -362,7 +384,7 @@ FillAdversaryX:
 	addi $sp, $sp, 4
 	
 	addi $t0, $t0, 1 
-	j FillAdversaryX
+	j FillAdversaryX		#Desenhar adversário na nova posição
 			
 FillAdversaryY:	
 	add $a0, $t0, $0 		#Carregando coordenada x do adversário
@@ -395,7 +417,7 @@ FillAdversaryY:
 	
 ############################################################################
 #	Função DrawPlayer						   #
-# 	$a2 -> Valor para somar com a coordenada Y e fazer o jogador pular #
+# 	$a2 -> Valor para somar com a coordenada y e fazer o jogador pular #
 # 	$a3 -> Valor do formato do jogador				   #
 ############################################################################
 DrawPlayer:
@@ -417,36 +439,36 @@ FillPlayerX:
 	j FillPlayerX
 			
 FillPlayerY:	
-	add $a0, $t0, $0 		#carregando coordenada x do jogador
-	add $a1, $t1, $a2 		#carregando coordenada y do jogador
+	add $a0, $t0, $0 		#Carregando coordenada x do jogador
+	add $a1, $t1, $a2 		#Carregando coordenada y do jogador
 		
-	addi $sp, $sp, -4 		#salvando valor de $ra
+	addi $sp, $sp, -4 		#Salvando valor de $ra
 	sw $ra, 0($sp)
 								
-	jal Coordinate 			#pegando as coordenadas da tela
+	jal Coordinate 			#Pegando as coordenadas da tela
 	
-	lw $ra, 0($sp) 			#recuperando valor de $ra
+	lw $ra, 0($sp) 			#Recuperando valor de $ra
 	addi $sp, $sp, 4
 	
-	move $a0, $v0 			#copiando coordenadas para $a0
-	addi $a1, $t5, 0 		#carregando a cor do jogador para $a1
+	move $a0, $v0 			#Copiando coordenadas para $a0
+	addi $a1, $t5, 0 		#Carregando a cor do jogador para $a1
 	
-	beq $t1, $a3, stopFill 		#comparando se já chegou à altura por baixo do jogador
+	beq $t1, $a3, stopFill 		#Comparando se já chegou à altura por baixo do jogador
 
-	addi $sp, $sp, -4		#salvando valor de $ra
+	addi $sp, $sp, -4		#Salvando valor de $ra
 	sw $ra, 0($sp)
 			
-	jal DrawPixel			#desenhar jogador
+	jal DrawPixel			#Desenhar jogador
 	
-	lw $ra, 0($sp) 			#recuperando valor de $ra
+	lw $ra, 0($sp) 			#Recuperando valor de $ra
 	addi $sp, $sp, 4
 	
 	addi $t1, $t1, 1
 	j FillPlayerY
 	
 stopFill:
-	lw $t1, playerHeadY 		#carregando coordenada y do jogador
-	lw $t1, adversaryHeadY 		#carregando coordenada y do adverário
+	lw $t1, playerHeadY 		#Carregando coordenada y do jogador
+	lw $t1, adversaryHeadY 		#Carregando coordenada y do adversário
 	jr $ra
 	
 Exit:
@@ -459,9 +481,9 @@ playerDied:
 	
 	#Removendo uma vida
 	addi $t0, $t0, -1
-	lw $s5, score #lê o score
-	add $s5, $s5, -1 #Subtrai 1 do score para não receber nenhum ponto quando o jogador for atingido
-	sw $s5, score #Armazena o valor do score
+	lw $s5, score 			#Lê o score
+	add $s5, $s5, -1 		#Subtrai 1 do score para não receber nenhum ponto quando o jogador for atingido
+	sw $s5, score 			#Armazena o valor do score
 	sw $t0, lives
 	
 	#Imprimindo a mensagem que foi atingido
@@ -493,10 +515,10 @@ gameOver:
 	lw $a1, score
 	syscall
 	
-	#Perguntar se quer reiniciar a partida
+	#Pergunta se quer reiniciar a partida
 	li $v0, 50
 	la $a0, RestartMsg
 	syscall
 	
-	#Testa a resposta do usuario
-	beq $a0, 0, reset #Se for 0 o usuário quer reiniciar
+	#Testa a resposta do usuário
+	beq $a0, 0, reset 		#Se for 0 o usuário quer reiniciar
